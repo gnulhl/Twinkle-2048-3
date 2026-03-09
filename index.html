@@ -20,10 +20,18 @@
       --shadow:#0a0f24;
       --tile-empty:#171b36;
       --tile-empty-line:#252b5b;
-      --danger:#ff93b0;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;padding:0;background:radial-gradient(circle at 20% 20%, rgba(129,160,255,.18), transparent 25%),radial-gradient(circle at 80% 12%, rgba(255,220,130,.12), transparent 18%),radial-gradient(circle at 50% 75%, rgba(255,150,222,.10), transparent 20%),var(--bg);color:var(--text);font-family:ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    html,body{
+      margin:0;padding:0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(129,160,255,.18), transparent 25%),
+        radial-gradient(circle at 80% 12%, rgba(255,220,130,.12), transparent 18%),
+        radial-gradient(circle at 50% 75%, rgba(255,150,222,.10), transparent 20%),
+        var(--bg);
+      color:var(--text);
+      font-family:ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+    }
     body{min-height:100dvh;padding:12px 12px calc(16px + env(safe-area-inset-bottom))}
     .app{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:16px}
     .panel{background:var(--panel);border:4px solid var(--line-2);box-shadow:0 0 0 4px var(--shadow), inset 0 -6px 0 rgba(0,0,0,.28);border-radius:8px;padding:14px;overflow:hidden}
@@ -106,7 +114,7 @@
       .notes{grid-template-columns:1fr}
       .section-title{font-size:20px}
       .badge{font-size:11px}
-      .tools-row{display:grid;grid-template-columns:1fr 1fr}
+      .tools-row{display:grid;grid-template-columns:1fr}
       .tools-row .btn{width:100%}
     }
   </style>
@@ -118,7 +126,7 @@
         <div>
           <div class="eyebrow">✦ TWINKLE PIXEL MERGE</div>
           <h1>星星人合成</h1>
-          <div class="subtitle">像素小星星人版 2048。图鉴改成只有在你真的合成出对应星星人后才解锁，后面还藏着一个不公开名字的隐藏款。</div>
+          <div class="subtitle">像素小星星人版 2048。图鉴只有在你真的合成出对应星星人后才会解锁，后面还藏着一个不公开名字的隐藏款。</div>
         </div>
         <div class="btns">
           <button id="undoBtn" class="btn">↶ 回退</button>
@@ -129,7 +137,7 @@
       <div class="stats">
         <div class="stat"><div class="stat-label">score</div><div id="scoreEl" class="stat-value">0</div></div>
         <div class="stat"><div class="stat-label">best</div><div id="bestEl" class="stat-value">0</div></div>
-        <div class="stat"><div class="stat-label">星愿</div><div id="wishEl" class="stat-value">1</div></div>
+        <div class="stat"><div class="stat-label">星愿</div><div id="wishEl" class="stat-value">2</div></div>
         <div class="stat"><div class="stat-label">已发现</div><div id="foundEl" class="stat-value">0</div></div>
         <div class="stat"><div class="stat-label">目标</div><div class="stat-value">2048</div></div>
       </div>
@@ -137,7 +145,7 @@
       <div class="tools-row">
         <button id="wishBtn" class="btn">使用星愿</button>
       </div>
-      <div class="tip-bar">星愿：点击任意一个星星人，直接升 1 级。背包上限固定为 <b>1</b>。</div>
+      <div class="tip-bar">星愿：点击任意一个非空方块直接消除。背包上限固定为 <b>2</b>，开局送 <b>2</b> 个，每获得 <b>500</b> 分补充 <b>1</b> 个。</div>
 
       <div class="board-wrap">
         <div id="board" class="board"></div>
@@ -154,9 +162,9 @@
       </div>
 
       <div class="notes">
-        <div class="note"><strong>图鉴规则</strong> 现在不是看最高分，而是必须在本局或历史里真正合成出对应星星人，才会永久点亮。</div>
+        <div class="note"><strong>图鉴规则</strong> 现在不是看最高分，而是必须真正合成出对应星星人，才会永久点亮。</div>
         <div class="note"><strong>隐藏款</strong> 达成 2048 之后还可以继续往上冲，后面还藏着一个神秘来客。</div>
-        <div class="note"><strong>轻松机制</strong> 星愿最多只能存 1 个，但会随着分数继续补回来，回退也一直可用。</div>
+        <div class="note"><strong>星愿改版</strong> 现在不再升级方块，而是直接消除任意一个非空方块，用来解卡更稳。</div>
       </div>
     </section>
 
@@ -182,8 +190,8 @@
         <div class="section-title" style="margin-bottom:12px;">操作说明</div>
         <div class="help">
           <div>• 键盘可用方向键 / WASD；手机直接滑动。</div>
-          <div>• 图鉴按“是否合成过”解锁，不再按最高分解锁。</div>
-          <div>• 星愿更适合救卡位，或者补最后一级合成。</div>
+          <div>• 点“使用星愿”后，再点任意一个非空方块即可直接消除。</div>
+          <div>• 星愿上限为 2，开局给满；分数每累计到 500 的新档位，会补 1 个。</div>
           <div>• 回退始终可用，手滑也能补救。</div>
         </div>
       </section>
@@ -196,25 +204,24 @@
     const SIZE = 4;
     const TARGET = 2048;
     const MAX_HISTORY = 24;
-    const STORAGE_BEST = 'twinkle-best-v3';
-    const STORAGE_UNLOCKS = 'twinkle-unlocks-v2';
+    const STORAGE_BEST = 'twinkle-best-v4';
+    const STORAGE_UNLOCKS = 'twinkle-unlocks-v3';
 
     const STAR_ORDER = [2,4,8,16,32,64,128,256,512,1024,2048,5090];
 
     const STAR_PEOPLE = {
-      2:{ name: '灯帽星星人', title: '头顶刚亮起第一颗小星', variant: 'hood', palette: { body:'#FFD66E', outline:'#9B5D12', skin:'#FFC09A', eye:'#3B2418', blush:'#F78FAE', a:'#FFF2B8', c:'#FFE27A', g:'#FFF8D8' } },
-      4:{ name: '奶霜星星人', title: '帽子像一团软绵绵糖霜', variant: 'puffhood', palette: { body:'#FFE68A', outline:'#A56A17', skin:'#FFC4A2', eye:'#40281A', blush:'#F6A0B5', a:'#FFF7D6', c:'#FFF0A3', g:'#FFFCEE' } },
-      8:{ name: '雨披星星人', title: '把闪光藏在小雨衣里', variant: 'raincoat', palette: { body:'#FFBF7C', outline:'#9B551C', skin:'#FFCAA8', eye:'#412716', blush:'#F59AB6', a:'#FFE8A8', c:'#FFC16C', g:'#FFF3D7' } },
-      16:{ name: '甜筒星星人', title: '像从游乐园跑出来的锥帽旅人', variant: 'cone', palette: { body:'#AEEFD4', outline:'#25735C', skin:'#FFC7A6', eye:'#1F3A2D', blush:'#F29CB7', a:'#E9FFF8', c:'#8FDCC3', g:'#F5FFFB' } },
-      32:{ name: '困困星星人', title: '帽檐歪着，走路还在打瞌睡', variant: 'sleepcap', palette: { body:'#A9DFFF', outline:'#285C86', skin:'#FFD0B1', eye:'#1B2E47', blush:'#F4A0C6', a:'#EAF7FF', c:'#BFE9FF', g:'#F7FBFF' } },
-      64:{ name: '花匠星星人', title: '头上冒芽，口袋里全是种子', variant: 'sprout', palette: { body:'#C9B0FF', outline:'#563D9D', skin:'#FFCBAB', eye:'#2B2151', blush:'#F39ED1', a:'#F4EEFF', c:'#DCCEFF', g:'#FAF7FF' } },
-      128:{ name: '邮差星星人', title: '围巾像一条小彗尾', variant: 'scarf', palette: { body:'#FFB3E0', outline:'#A6487D', skin:'#FFC9B1', eye:'#4B2440', blush:'#FF91AE', a:'#FFEAF7', c:'#FFDAEF', g:'#FFF7FC' } },
-      256:{ name: '魔法师星星人', title: '背着一团会发光的小云', variant: 'wizard', palette: { body:'#FFD29B', outline:'#A6642A', skin:'#FFD3B9', eye:'#4A2D14', blush:'#F6A0B0', a:'#FFF1DA', c:'#FFE4BD', g:'#FFF8EC' } },
-      512:{ name: '船长星星人', title: '戴上大檐帽，像要去巡夜空', variant: 'captain', palette: { body:'#FFE585', outline:'#97701B', skin:'#FFD7B7', eye:'#4E3414', blush:'#F8A6B8', a:'#FFF6D2', c:'#FFECB0', g:'#FFFCEE' } },
-      1024:{ name: '星冠旅人', title: '披风已经开始拖着银河走', variant: 'crowncape', palette: { body:'#FFF09C', outline:'#A27C20', skin:'#FFDCC1', eye:'#5A3A17', blush:'#F8A9BD', a:'#FFF8DA', c:'#FFF0B0', g:'#FFFDF3' } },
-      2048:{ name: '晨曦星王', title: '把整片天亮都披在身上', variant: 'celestial', palette: { body:'#FFF5B0', outline:'#AA8220', skin:'#FFE0C6', eye:'#5D3B19', blush:'#F9AFC3', a:'#FFFFFF', c:'#FFF4BF', g:'#FFFDF8' } },
-      5090:{ name: '星界鼻涕虫', title: '它从星海缝隙里滑了出来，黏黏地带着宇宙微光', variant: 'slug', palette: { body:'#A6FFEE', outline:'#188C7D', skin:'#D9FFF7', eye:'#143B37', blush:'#7CEED9', a:'#C8FFF4', c:'#70F4E0', g:'#EFFFFB' } },
-      hiddenMeta:{ name: '隐藏款', title: '神秘来客已经现身', variant: 'slug' },
+      2:{ name:'灯帽星星人', title:'头顶刚亮起第一颗小星', variant:'hood', palette:{ body:'#FFD66E', outline:'#9B5D12', skin:'#FFC09A', eye:'#3B2418', blush:'#F78FAE', a:'#FFF2B8', c:'#FFE27A', g:'#FFF8D8' } },
+      4:{ name:'奶霜星星人', title:'帽子像一团软绵绵糖霜', variant:'puffhood', palette:{ body:'#FFE68A', outline:'#A56A17', skin:'#FFC4A2', eye:'#40281A', blush:'#F6A0B5', a:'#FFF7D6', c:'#FFF0A3', g:'#FFFCEE' } },
+      8:{ name:'雨披星星人', title:'把闪光藏在小雨衣里', variant:'raincoat', palette:{ body:'#FFBF7C', outline:'#9B551C', skin:'#FFCAA8', eye:'#412716', blush:'#F59AB6', a:'#FFE8A8', c:'#FFC16C', g:'#FFF3D7' } },
+      16:{ name:'甜筒星星人', title:'像从游乐园跑出来的锥帽旅人', variant:'cone', palette:{ body:'#AEEFD4', outline:'#25735C', skin:'#FFC7A6', eye:'#1F3A2D', blush:'#F29CB7', a:'#E9FFF8', c:'#8FDCC3', g:'#F5FFFB' } },
+      32:{ name:'困困星星人', title:'帽檐歪着，走路还在打瞌睡', variant:'sleepcap', palette:{ body:'#A9DFFF', outline:'#285C86', skin:'#FFD0B1', eye:'#1B2E47', blush:'#F4A0C6', a:'#EAF7FF', c:'#BFE9FF', g:'#F7FBFF' } },
+      64:{ name:'花匠星星人', title:'头上冒芽，口袋里全是种子', variant:'sprout', palette:{ body:'#C9B0FF', outline:'#563D9D', skin:'#FFCBAB', eye:'#2B2151', blush:'#F39ED1', a:'#F4EEFF', c:'#DCCEFF', g:'#FAF7FF' } },
+      128:{ name:'邮差星星人', title:'围巾像一条小彗尾', variant:'scarf', palette:{ body:'#FFB3E0', outline:'#A6487D', skin:'#FFC9B1', eye:'#4B2440', blush:'#FF91AE', a:'#FFEAF7', c:'#FFDAEF', g:'#FFF7FC' } },
+      256:{ name:'魔法师星星人', title:'背着一团会发光的小云', variant:'wizard', palette:{ body:'#FFD29B', outline:'#A6642A', skin:'#FFD3B9', eye:'#4A2D14', blush:'#F6A0B0', a:'#FFF1DA', c:'#FFE4BD', g:'#FFF8EC' } },
+      512:{ name:'船长星星人', title:'戴上大檐帽，像要去巡夜空', variant:'captain', palette:{ body:'#FFE585', outline:'#97701B', skin:'#FFD7B7', eye:'#4E3414', blush:'#F8A6B8', a:'#FFF6D2', c:'#FFECB0', g:'#FFFCEE' } },
+      1024:{ name:'星冠旅人', title:'披风已经开始拖着银河走', variant:'crowncape', palette:{ body:'#FFF09C', outline:'#A27C20', skin:'#FFDCC1', eye:'#5A3A17', blush:'#F8A9BD', a:'#FFF8DA', c:'#FFF0B0', g:'#FFFDF3' } },
+      2048:{ name:'晨曦星王', title:'把整片天亮都披在身上', variant:'celestial', palette:{ body:'#FFF5B0', outline:'#AA8220', skin:'#FFE0C6', eye:'#5D3B19', blush:'#F9AFC3', a:'#FFFFFF', c:'#FFF4BF', g:'#FFFDF8' } },
+      5090:{ name:'隐藏款', title:'神秘来客已经现身', variant:'slug', palette:{ body:'#A6FFEE', outline:'#188C7D', skin:'#D9FFF7', eye:'#143B37', blush:'#7CEED9', a:'#C8FFF4', c:'#70F4E0', g:'#EFFFFB' } }
     };
 
     const TILE_COLORS = {
@@ -230,14 +237,20 @@
       512:{ bg:'#342242', border:'#e2b14a', text:'#fff7dc' },
       1024:{ bg:'#372342', border:'#f1c95a', text:'#fff9e3' },
       2048:{ bg:'#3a2440', border:'#ffe27a', text:'#fffcef' },
-      4096:{ bg:'#24344a', border:'#74d3ca', text:'#e7fffb' },
-      5090:{ bg:'#153d3d', border:'#7ef8e3', text:'#f1fffb' },
+      5090:{ bg:'#153d3d', border:'#7ef8e3', text:'#f1fffb' }
     };
 
     const state = {
-      board: [], score: 0, best: Number(localStorage.getItem(STORAGE_BEST) || 0), won: false, gameOver: false, history: [], wishMode: false, wishesUsed: 0,
+      board: [],
+      score: 0,
+      best: Number(localStorage.getItem(STORAGE_BEST) || 0),
+      won: false,
+      gameOver: false,
+      history: [],
+      wishMode: false,
+      wishesUsed: 0,
       unlocked: new Set(JSON.parse(localStorage.getItem(STORAGE_UNLOCKS) || '[2,4]')),
-      newlyUnlocked: null,
+      newlyUnlocked: null
     };
 
     const boardEl = document.getElementById('board');
@@ -260,105 +273,194 @@
       localStorage.setItem(STORAGE_BEST, String(state.best));
       localStorage.setItem(STORAGE_UNLOCKS, JSON.stringify([...state.unlocked].sort((a,b)=>a-b)));
     }
+
     function showToast(text){
       toastEl.textContent = text;
       toastEl.classList.add('show');
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(()=>toastEl.classList.remove('show'), 2200);
     }
-    function maybeVibrate(ms=18){ if(navigator.vibrate) navigator.vibrate(ms); }
-    function normalizeValue(value){ return value === 4096 ? 5090 : value; }
-    function displayValue(value){ return value === 5090 ? 5090 : value; }
+
+    function maybeVibrate(ms=18){
+      if(navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    function normalizeValue(value){
+      return value === 4096 ? 5090 : value;
+    }
+
+    function displayValue(value){
+      return normalizeValue(value);
+    }
+
     function canMerge(a,b){
       const na = normalizeValue(a);
       const nb = normalizeValue(b);
       if(na === 5090 || nb === 5090) return false;
       return na === nb;
     }
+
     function mergedValue(value){
       const n = normalizeValue(value);
       if(n === 2048) return 5090;
       return n * 2;
     }
-    function getStarInfo(value){ return STAR_PEOPLE[normalizeValue(value)] || STAR_PEOPLE[5090]; }
-    function isHiddenValue(value){ return normalizeValue(value) === 5090; }
+
+    function getStarInfo(value){
+      return STAR_PEOPLE[normalizeValue(value)] || STAR_PEOPLE[5090];
+    }
+
+    function isHiddenValue(value){
+      return normalizeValue(value) === 5090;
+    }
+
     function getPublicName(value, unlocked){
       if(isHiddenValue(value)) return unlocked ? '隐藏款' : '??? · 隐藏款';
       const info = getStarInfo(value);
       return unlocked ? `${normalizeValue(value)} · ${info.name}` : '??? · 未解锁星星人';
     }
+
     function getPublicDesc(value, unlocked){
       if(isHiddenValue(value)) return unlocked ? '神秘来客已经现身' : '真正合成出隐藏款后解锁';
       const info = getStarInfo(value);
       return unlocked ? info.title : `真正合成出 ${normalizeValue(value)} 后解锁`;
     }
+
     function getBoardLabel(value){
       if(isHiddenValue(value)) return '隐藏款';
-      const info = getStarInfo(value);
-      return info.name;
+      return getStarInfo(value).name;
     }
+
     function getFeaturedInfo(value){
       if(isHiddenValue(value)) return { name:'隐藏款', title:'神秘来客已经现身' };
       return getStarInfo(value);
     }
 
-    function createEmptyBoard(){ return Array.from({length:SIZE}, ()=>Array(SIZE).fill(0)); }
-    function cloneBoard(board){ return board.map(r=>[...r]); }
-    function randomEmptyCell(board){ const cells=[]; for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(board[r][c]===0) cells.push([r,c]); return cells.length ? cells[Math.floor(Math.random()*cells.length)] : null; }
-    function spawnValue(score=0){ const roll=Math.random(); if(score<300){ if(roll<0.62) return 2; if(roll<0.92) return 4; return 8; } if(score<1200){ if(roll<0.52) return 2; if(roll<0.82) return 4; return 8; } if(roll<0.42) return 2; if(roll<0.74) return 4; return 8; }
-    function addRandomTile(board, score=0){ const cell=randomEmptyCell(board); if(!cell) return board; const next=cloneBoard(board); next[cell[0]][cell[1]]=spawnValue(score); return next; }
-    function initializeBoard(){ let board=createEmptyBoard(); board=addRandomTile(board,0); board=addRandomTile(board,120); return board; }
-    function rotateClockwise(board){ const next=createEmptyBoard(); for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) next[c][SIZE-1-r]=board[r][c]; return next; }
-    function rotateTimes(board, times){ let out=cloneBoard(board); for(let i=0;i<times;i++) out=rotateClockwise(out); return out; }
+    function createEmptyBoard(){
+      return Array.from({length:SIZE}, ()=>Array(SIZE).fill(0));
+    }
+
+    function cloneBoard(board){
+      return board.map(r=>[...r]);
+    }
+
+    function randomEmptyCell(board){
+      const cells = [];
+      for(let r=0;r<SIZE;r++){
+        for(let c=0;c<SIZE;c++){
+          if(board[r][c] === 0) cells.push([r,c]);
+        }
+      }
+      return cells.length ? cells[Math.floor(Math.random()*cells.length)] : null;
+    }
+
+    function spawnValue(score=0){
+      const roll = Math.random();
+      if(score < 300){
+        if(roll < 0.62) return 2;
+        if(roll < 0.92) return 4;
+        return 8;
+      }
+      if(score < 1200){
+        if(roll < 0.52) return 2;
+        if(roll < 0.82) return 4;
+        return 8;
+      }
+      if(roll < 0.42) return 2;
+      if(roll < 0.74) return 4;
+      return 8;
+    }
+
+    function addRandomTile(board, score=0){
+      const cell = randomEmptyCell(board);
+      if(!cell) return board;
+      const next = cloneBoard(board);
+      next[cell[0]][cell[1]] = spawnValue(score);
+      return next;
+    }
+
+    function initializeBoard(){
+      let board = createEmptyBoard();
+      board = addRandomTile(board, 0);
+      board = addRandomTile(board, 120);
+      return board;
+    }
+
+    function rotateClockwise(board){
+      const next = createEmptyBoard();
+      for(let r=0;r<SIZE;r++){
+        for(let c=0;c<SIZE;c++){
+          next[c][SIZE - 1 - r] = board[r][c];
+        }
+      }
+      return next;
+    }
+
+    function rotateTimes(board, times){
+      let out = cloneBoard(board);
+      for(let i=0;i<times;i++) out = rotateClockwise(out);
+      return out;
+    }
 
     function slideLeft(board){
-      let moved=false, scoreGain=0, created=[];
-      const next=board.map(row=>{
-        const compact=row.filter(n=>n!==0);
-        const merged=[];
+      let moved = false;
+      let scoreGain = 0;
+      let created = [];
+      const next = board.map(row=>{
+        const compact = row.filter(n=>n!==0);
+        const merged = [];
         for(let i=0;i<compact.length;i++){
-          if(compact[i]!==0 && canMerge(compact[i], compact[i+1])){
-            const value=mergedValue(compact[i]);
+          if(compact[i] !== 0 && canMerge(compact[i], compact[i+1])){
+            const value = mergedValue(compact[i]);
             merged.push(value);
             scoreGain += value;
             created.push(normalizeValue(value));
             i++;
-            moved=true;
+            moved = true;
           }else{
             merged.push(compact[i]);
           }
         }
-        while(merged.length<SIZE) merged.push(0);
-        if(merged.some((v,idx)=>v!==row[idx])) moved=true;
+        while(merged.length < SIZE) merged.push(0);
+        if(merged.some((v,idx)=>v!==row[idx])) moved = true;
         return merged;
       });
-      return { board:next, moved, scoreGain, created };
+      return { board: next, moved, scoreGain, created };
     }
 
     function moveBoard(board, direction){
-      const rotations={left:0, up:3, right:2, down:1};
-      const rotated=rotateTimes(board, rotations[direction]);
-      const result=slideLeft(rotated);
-      return { ...result, board: rotateTimes(result.board, (4 - rotations[direction]) % 4) };
+      const rotations = { left:0, up:3, right:2, down:1 };
+      const rotated = rotateTimes(board, rotations[direction]);
+      const result = slideLeft(rotated);
+      return {
+        ...result,
+        board: rotateTimes(result.board, (4 - rotations[direction]) % 4)
+      };
     }
 
     function hasMoves(board){
       for(let r=0;r<SIZE;r++){
         for(let c=0;c<SIZE;c++){
-          if(board[r][c]===0) return true;
-          if(c<SIZE-1 && canMerge(board[r][c], board[r][c+1])) return true;
-          if(r<SIZE-1 && canMerge(board[r][c], board[r+1][c])) return true;
+          if(board[r][c] === 0) return true;
+          if(c < SIZE-1 && canMerge(board[r][c], board[r][c+1])) return true;
+          if(r < SIZE-1 && canMerge(board[r][c], board[r+1][c])) return true;
         }
       }
       return false;
     }
 
-    function getHighestActual(board){ return Math.max(...board.flat()); }
-    function getWishCount(score, wishesUsed){
-      const totalEarned = 1 + Math.floor(score / 220);
-      return Math.min(1, Math.max(0, totalEarned - wishesUsed));
+    function getHighestActual(board){
+      return Math.max(...board.flat());
     }
-    function getUnlockedCount(){ return STAR_ORDER.filter(v=>state.unlocked.has(v)).length; }
+
+    function getWishCount(score, wishesUsed){
+      const totalEarned = 2 + Math.floor(score / 500);
+      return Math.min(2, Math.max(0, totalEarned - wishesUsed));
+    }
+
+    function getUnlockedCount(){
+      return STAR_ORDER.filter(v=>state.unlocked.has(v)).length;
+    }
 
     function pushHistory(){
       state.history.push({
@@ -367,51 +469,227 @@
         won: state.won,
         gameOver: state.gameOver,
         wishesUsed: state.wishesUsed,
-        unlocked: [...state.unlocked],
+        unlocked: [...state.unlocked]
       });
       if(state.history.length > MAX_HISTORY) state.history.shift();
     }
 
-    function createGrid(size=16){ return Array.from({length:size}, ()=>Array(size).fill('.')); }
-    function paint(grid, x, y, ch){ if(x<0 || y<0 || y>=grid.length || x>=grid[0].length) return; grid[y][x]=ch; }
-    function rect(grid, x, y, w, h, ch){ for(let yy=y; yy<y+h; yy++) for(let xx=x; xx<x+w; xx++) paint(grid,xx,yy,ch); }
-    function diamond(grid, cx, cy, radius, ch){ for(let y=cy-radius; y<=cy+radius; y++) for(let x=cx-radius; x<=cx+radius; x++) if(Math.abs(x-cx)+Math.abs(y-cy)<=radius) paint(grid,x,y,ch); }
-    function ellipse(grid, cx, cy, rx, ry, ch){ for(let y=cy-ry-1; y<=cy+ry+1; y++) for(let x=cx-rx-1; x<=cx+rx+1; x++){ const dx=(x-cx)/rx, dy=(y-cy)/ry; if(dx*dx+dy*dy<=1) paint(grid,x,y,ch); } }
-    function triangleUp(grid, cx, topY, height, halfBase, ch){ for(let row=0; row<height; row++){ const spread=Math.floor((halfBase*row)/Math.max(1,height-1)); for(let x=cx-spread; x<=cx+spread; x++) paint(grid,x,topY+row,ch); } }
-    function triangleDown(grid, cx, topY, height, halfBase, ch){ for(let row=0; row<height; row++){ const spread=Math.floor((halfBase*(height-1-row))/Math.max(1,height-1)); for(let x=cx-spread; x<=cx+spread; x++) paint(grid,x,topY+row,ch); } }
-    function addFace(grid,{x=8,y=7,rx=3,ry=3}={}){ ellipse(grid,x,y,rx+1,ry+1,'o'); ellipse(grid,x,y,rx,ry,'s'); paint(grid,x-1,y,'e'); paint(grid,x+1,y,'e'); paint(grid,x-2,y+1,'p'); paint(grid,x+2,y+1,'p'); paint(grid,x,y+2,'m'); }
-    function addTopStar(grid,x,y){ paint(grid,x,y-1,'g'); paint(grid,x-1,y,'g'); paint(grid,x,y,'g'); paint(grid,x+1,y,'g'); paint(grid,x,y+1,'g'); }
+    function createGrid(size=16){
+      return Array.from({length:size}, ()=>Array(size).fill('.'));
+    }
+
+    function paint(grid, x, y, ch){
+      if(x<0 || y<0 || y>=grid.length || x>=grid[0].length) return;
+      grid[y][x] = ch;
+    }
+
+    function rect(grid, x, y, w, h, ch){
+      for(let yy=y; yy<y+h; yy++){
+        for(let xx=x; xx<x+w; xx++) paint(grid, xx, yy, ch);
+      }
+    }
+
+    function diamond(grid, cx, cy, radius, ch){
+      for(let y=cy-radius; y<=cy+radius; y++){
+        for(let x=cx-radius; x<=cx+radius; x++){
+          if(Math.abs(x-cx)+Math.abs(y-cy)<=radius) paint(grid, x, y, ch);
+        }
+      }
+    }
+
+    function ellipse(grid, cx, cy, rx, ry, ch){
+      for(let y=cy-ry-1; y<=cy+ry+1; y++){
+        for(let x=cx-rx-1; x<=cx+rx+1; x++){
+          const dx=(x-cx)/rx;
+          const dy=(y-cy)/ry;
+          if(dx*dx + dy*dy <= 1) paint(grid, x, y, ch);
+        }
+      }
+    }
+
+    function triangleUp(grid, cx, topY, height, halfBase, ch){
+      for(let row=0; row<height; row++){
+        const spread = Math.floor((halfBase*row)/Math.max(1,height-1));
+        for(let x=cx-spread; x<=cx+spread; x++) paint(grid, x, topY+row, ch);
+      }
+    }
+
+    function triangleDown(grid, cx, topY, height, halfBase, ch){
+      for(let row=0; row<height; row++){
+        const spread = Math.floor((halfBase*(height-1-row))/Math.max(1,height-1));
+        for(let x=cx-spread; x<=cx+spread; x++) paint(grid, x, topY+row, ch);
+      }
+    }
+
+    function addFace(grid, {x=8,y=7,rx=3,ry=3}={}){
+      ellipse(grid,x,y,rx+1,ry+1,'o');
+      ellipse(grid,x,y,rx,ry,'s');
+      paint(grid,x-1,y,'e');
+      paint(grid,x+1,y,'e');
+      paint(grid,x-2,y+1,'p');
+      paint(grid,x+2,y+1,'p');
+      paint(grid,x,y+2,'m');
+    }
+
+    function addTopStar(grid,x,y){
+      paint(grid,x,y-1,'g');
+      paint(grid,x-1,y,'g');
+      paint(grid,x,y,'g');
+      paint(grid,x+1,y,'g');
+      paint(grid,x,y+1,'g');
+    }
 
     function generateSprite(variant){
-      const grid=createGrid();
-      const bodyBase=()=>{ rect(grid,5,9,6,4,'o'); rect(grid,6,9,4,4,'b'); paint(grid,6,13,'o'); paint(grid,9,13,'o'); paint(grid,6,14,'b'); paint(grid,9,14,'b'); paint(grid,4,10,'o'); paint(grid,11,10,'o'); };
+      const grid = createGrid();
+      const bodyBase = ()=>{
+        rect(grid,5,9,6,4,'o');
+        rect(grid,6,9,4,4,'b');
+        paint(grid,6,13,'o');
+        paint(grid,9,13,'o');
+        paint(grid,6,14,'b');
+        paint(grid,9,14,'b');
+        paint(grid,4,10,'o');
+        paint(grid,11,10,'o');
+      };
+
       switch(variant){
         case 'hood':
-          triangleUp(grid,8,1,8,5,'o'); triangleUp(grid,8,2,6,4,'b'); bodyBase(); addFace(grid,{x:8,y:7,rx:3,ry:3}); addTopStar(grid,8,0); break;
+          triangleUp(grid,8,1,8,5,'o');
+          triangleUp(grid,8,2,6,4,'b');
+          bodyBase();
+          addFace(grid,{x:8,y:7,rx:3,ry:3});
+          addTopStar(grid,8,0);
+          break;
         case 'puffhood':
-          ellipse(grid,8,4,5,3,'o'); ellipse(grid,8,4,4,2,'a'); triangleDown(grid,8,5,5,4,'o'); triangleDown(grid,8,6,4,3,'b'); bodyBase(); addFace(grid,{x:8,y:8,rx:3,ry:3}); addTopStar(grid,11,1); break;
+          ellipse(grid,8,4,5,3,'o');
+          ellipse(grid,8,4,4,2,'a');
+          triangleDown(grid,8,5,5,4,'o');
+          triangleDown(grid,8,6,4,3,'b');
+          bodyBase();
+          addFace(grid,{x:8,y:8,rx:3,ry:3});
+          addTopStar(grid,11,1);
+          break;
         case 'raincoat':
-          triangleUp(grid,8,2,6,4,'o'); triangleUp(grid,8,3,4,3,'b'); triangleDown(grid,8,8,7,6,'o'); triangleDown(grid,8,9,5,5,'b'); paint(grid,5,12,'a'); paint(grid,10,12,'a'); addFace(grid,{x:8,y:7,rx:3,ry:2}); addTopStar(grid,12,2); break;
+          triangleUp(grid,8,2,6,4,'o');
+          triangleUp(grid,8,3,4,3,'b');
+          triangleDown(grid,8,8,7,6,'o');
+          triangleDown(grid,8,9,5,5,'b');
+          paint(grid,5,12,'a');
+          paint(grid,10,12,'a');
+          addFace(grid,{x:8,y:7,rx:3,ry:2});
+          addTopStar(grid,12,2);
+          break;
         case 'cone':
-          triangleUp(grid,8,0,8,4,'o'); triangleUp(grid,8,1,6,3,'b'); rect(grid,5,7,6,2,'o'); rect(grid,6,7,4,1,'a'); rect(grid,5,9,6,5,'o'); rect(grid,6,9,4,4,'b'); addFace(grid,{x:8,y:10,rx:3,ry:2}); addTopStar(grid,8,0); break;
+          triangleUp(grid,8,0,8,4,'o');
+          triangleUp(grid,8,1,6,3,'b');
+          rect(grid,5,7,6,2,'o');
+          rect(grid,6,7,4,1,'a');
+          rect(grid,5,9,6,5,'o');
+          rect(grid,6,9,4,4,'b');
+          addFace(grid,{x:8,y:10,rx:3,ry:2});
+          addTopStar(grid,8,0);
+          break;
         case 'sleepcap':
-          ellipse(grid,7,4,5,3,'o'); ellipse(grid,7,4,4,2,'b'); rect(grid,10,3,2,5,'o'); rect(grid,10,4,1,3,'b'); diamond(grid,11,7,1,'a'); rect(grid,5,9,6,4,'o'); rect(grid,6,9,4,4,'b'); addFace(grid,{x:7,y:8,rx:3,ry:3}); break;
+          ellipse(grid,7,4,5,3,'o');
+          ellipse(grid,7,4,4,2,'b');
+          rect(grid,10,3,2,5,'o');
+          rect(grid,10,4,1,3,'b');
+          diamond(grid,11,7,1,'a');
+          rect(grid,5,9,6,4,'o');
+          rect(grid,6,9,4,4,'b');
+          addFace(grid,{x:7,y:8,rx:3,ry:3});
+          break;
         case 'sprout':
-          ellipse(grid,8,5,4,4,'o'); ellipse(grid,8,5,3,3,'b'); rect(grid,7,0,1,3,'c'); diamond(grid,6,1,1,'a'); diamond(grid,9,1,1,'a'); triangleDown(grid,8,8,6,5,'o'); triangleDown(grid,8,9,4,4,'b'); addFace(grid,{x:8,y:6,rx:3,ry:2}); break;
+          ellipse(grid,8,5,4,4,'o');
+          ellipse(grid,8,5,3,3,'b');
+          rect(grid,7,0,1,3,'c');
+          diamond(grid,6,1,1,'a');
+          diamond(grid,9,1,1,'a');
+          triangleDown(grid,8,8,6,5,'o');
+          triangleDown(grid,8,9,4,4,'b');
+          addFace(grid,{x:8,y:6,rx:3,ry:2});
+          break;
         case 'scarf':
-          triangleUp(grid,8,1,6,4,'o'); triangleUp(grid,8,2,4,3,'b'); rect(grid,5,8,6,5,'o'); rect(grid,6,8,4,4,'b'); rect(grid,3,10,3,1,'a'); rect(grid,2,11,4,1,'a'); paint(grid,1,12,'a'); addFace(grid,{x:8,y:7,rx:3,ry:2}); addTopStar(grid,12,2); break;
+          triangleUp(grid,8,1,6,4,'o');
+          triangleUp(grid,8,2,4,3,'b');
+          rect(grid,5,8,6,5,'o');
+          rect(grid,6,8,4,4,'b');
+          rect(grid,3,10,3,1,'a');
+          rect(grid,2,11,4,1,'a');
+          paint(grid,1,12,'a');
+          addFace(grid,{x:8,y:7,rx:3,ry:2});
+          addTopStar(grid,12,2);
+          break;
         case 'wizard':
-          triangleUp(grid,8,0,7,5,'o'); triangleUp(grid,8,1,5,4,'b'); rect(grid,4,6,8,1,'o'); rect(grid,5,6,6,1,'a'); rect(grid,5,8,6,4,'o'); rect(grid,6,8,4,4,'b'); ellipse(grid,12,10,2,2,'a'); ellipse(grid,12,10,1,1,'g'); addFace(grid,{x:8,y:9,rx:3,ry:2}); addTopStar(grid,10,1); break;
+          triangleUp(grid,8,0,7,5,'o');
+          triangleUp(grid,8,1,5,4,'b');
+          rect(grid,4,6,8,1,'o');
+          rect(grid,5,6,6,1,'a');
+          rect(grid,5,8,6,4,'o');
+          rect(grid,6,8,4,4,'b');
+          ellipse(grid,12,10,2,2,'a');
+          ellipse(grid,12,10,1,1,'g');
+          addFace(grid,{x:8,y:9,rx:3,ry:2});
+          addTopStar(grid,10,1);
+          break;
         case 'captain':
-          rect(grid,4,2,8,2,'o'); rect(grid,5,1,6,3,'b'); rect(grid,3,4,10,1,'o'); rect(grid,5,7,6,5,'o'); rect(grid,6,7,4,4,'b'); paint(grid,8,2,'g'); rect(grid,4,10,2,1,'a'); rect(grid,10,10,2,1,'a'); addFace(grid,{x:8,y:8,rx:3,ry:2}); break;
+          rect(grid,4,2,8,2,'o');
+          rect(grid,5,1,6,3,'b');
+          rect(grid,3,4,10,1,'o');
+          rect(grid,5,7,6,5,'o');
+          rect(grid,6,7,4,4,'b');
+          paint(grid,8,2,'g');
+          rect(grid,4,10,2,1,'a');
+          rect(grid,10,10,2,1,'a');
+          addFace(grid,{x:8,y:8,rx:3,ry:2});
+          break;
         case 'crowncape':
-          rect(grid,5,1,1,2,'g'); rect(grid,8,0,1,3,'g'); rect(grid,11,1,1,2,'g'); rect(grid,4,3,9,1,'o'); rect(grid,5,3,7,1,'a'); ellipse(grid,8,6,4,3,'o'); ellipse(grid,8,6,3,2,'b'); triangleDown(grid,8,8,7,6,'o'); triangleDown(grid,8,9,5,5,'b'); rect(grid,5,10,1,3,'c'); rect(grid,10,10,1,3,'c'); addFace(grid,{x:8,y:7,rx:3,ry:2}); break;
+          rect(grid,5,1,1,2,'g');
+          rect(grid,8,0,1,3,'g');
+          rect(grid,11,1,1,2,'g');
+          rect(grid,4,3,9,1,'o');
+          rect(grid,5,3,7,1,'a');
+          ellipse(grid,8,6,4,3,'o');
+          ellipse(grid,8,6,3,2,'b');
+          triangleDown(grid,8,8,7,6,'o');
+          triangleDown(grid,8,9,5,5,'b');
+          rect(grid,5,10,1,3,'c');
+          rect(grid,10,10,1,3,'c');
+          addFace(grid,{x:8,y:7,rx:3,ry:2});
+          break;
         case 'celestial':
-          diamond(grid,8,2,2,'g'); triangleUp(grid,8,1,7,5,'o'); triangleUp(grid,8,2,5,4,'a'); rect(grid,6,6,4,1,'g'); ellipse(grid,8,8,4,3,'o'); ellipse(grid,8,8,3,2,'b'); triangleDown(grid,8,10,5,6,'o'); triangleDown(grid,8,11,4,5,'b'); rect(grid,3,10,2,1,'c'); rect(grid,11,10,2,1,'c'); ellipse(grid,2,5,1,1,'g'); ellipse(grid,13,4,1,1,'g'); addFace(grid,{x:8,y:8,rx:3,ry:2}); break;
+          diamond(grid,8,2,2,'g');
+          triangleUp(grid,8,1,7,5,'o');
+          triangleUp(grid,8,2,5,4,'a');
+          rect(grid,6,6,4,1,'g');
+          ellipse(grid,8,8,4,3,'o');
+          ellipse(grid,8,8,3,2,'b');
+          triangleDown(grid,8,10,5,6,'o');
+          triangleDown(grid,8,11,4,5,'b');
+          rect(grid,3,10,2,1,'c');
+          rect(grid,11,10,2,1,'c');
+          ellipse(grid,2,5,1,1,'g');
+          ellipse(grid,13,4,1,1,'g');
+          addFace(grid,{x:8,y:8,rx:3,ry:2});
+          break;
         case 'slug':
-          ellipse(grid,7,10,5,3,'o'); ellipse(grid,7,10,4,2,'b'); ellipse(grid,10,9,3,2,'b'); ellipse(grid,11,7,2,2,'s'); paint(grid,10,7,'e'); paint(grid,12,7,'e'); paint(grid,10,8,'p'); paint(grid,12,8,'p'); rect(grid,2,11,2,1,'c'); rect(grid,3,12,2,1,'c'); diamond(grid,13,6,1,'g'); break;
+          ellipse(grid,7,10,5,3,'o');
+          ellipse(grid,7,10,4,2,'b');
+          ellipse(grid,10,9,3,2,'b');
+          ellipse(grid,11,7,2,2,'s');
+          paint(grid,10,7,'e');
+          paint(grid,12,7,'e');
+          paint(grid,10,8,'p');
+          paint(grid,12,8,'p');
+          rect(grid,2,11,2,1,'c');
+          rect(grid,3,12,2,1,'c');
+          diamond(grid,13,6,1,'g');
+          break;
         default:
-          triangleUp(grid,8,1,8,5,'o'); triangleUp(grid,8,2,6,4,'b'); bodyBase(); addFace(grid,{x:8,y:7,rx:3,ry:3});
+          triangleUp(grid,8,1,8,5,'o');
+          triangleUp(grid,8,2,6,4,'b');
+          bodyBase();
+          addFace(grid,{x:8,y:7,rx:3,ry:3});
       }
       return grid;
     }
@@ -423,82 +701,128 @@
       const colorMap = locked
         ? { '.':'transparent', o:'#2a2f58', b:'#2a2f58', s:'#2a2f58', e:'#1c203f', p:'#2a2f58', a:'#343a6c', c:'#343a6c', g:'#434a84', m:'#1c203f' }
         : { '.':'transparent', o:p.outline, b:p.body, s:p.skin, e:p.eye, p:p.blush, a:p.a, c:p.c, g:p.g, m:p.eye };
-      const wrap=document.createElement('div');
-      wrap.className='sprite'+(large?' large':'');
+
+      const wrap = document.createElement('div');
+      wrap.className = 'sprite' + (large ? ' large' : '');
       wrap.style.filter = locked ? 'none' : `drop-shadow(0 0 8px ${p.g}66)`;
-      grid.flat().forEach(ch=>{ const cell=document.createElement('div'); cell.className='px'; cell.style.background=colorMap[ch] || 'transparent'; wrap.appendChild(cell); });
+
+      grid.flat().forEach(ch=>{
+        const cell = document.createElement('div');
+        cell.className = 'px';
+        cell.style.background = colorMap[ch] || 'transparent';
+        wrap.appendChild(cell);
+      });
       return wrap;
     }
 
     function renderBoard(){
-      boardEl.innerHTML='';
-      const wishCount=getWishCount(state.score, state.wishesUsed);
-      state.board.forEach((row,r)=>{
-        row.forEach((rawValue,c)=>{
-          const value = rawValue===4096 ? 5090 : rawValue;
-          const tile=document.createElement('button');
-          tile.className='tile';
-          const colors=TILE_COLORS[value] || TILE_COLORS[5090];
-          if(value===0){
+      boardEl.innerHTML = '';
+      const wishCount = getWishCount(state.score, state.wishesUsed);
+
+      state.board.forEach((row, r)=>{
+        row.forEach((rawValue, c)=>{
+          const value = normalizeValue(rawValue);
+          const tile = document.createElement('button');
+          tile.className = 'tile';
+          const colors = TILE_COLORS[value] || TILE_COLORS[5090];
+
+          if(value === 0){
             tile.classList.add('empty');
           }else{
-            tile.style.background=colors.bg;
-            tile.style.borderColor=colors.border;
-            tile.style.color=colors.text;
-            if(state.wishMode && wishCount>0) tile.classList.add('wish-mode');
-            const inner=document.createElement('div');
-            inner.className='tile-inner';
+            tile.style.background = colors.bg;
+            tile.style.borderColor = colors.border;
+            tile.style.color = colors.text;
+
+            if(state.wishMode && wishCount > 0) tile.classList.add('wish-mode');
+
+            const inner = document.createElement('div');
+            inner.className = 'tile-inner';
             inner.appendChild(createSpriteElement(value));
-            const name=document.createElement('div');
-            name.className='tile-name';
-            name.textContent = getBoardLabel(value) || `超新星星人 ${value}`;
-            const num=document.createElement('div');
-            num.className='tile-num';
-            num.textContent=displayValue(value);
+
+            const name = document.createElement('div');
+            name.className = 'tile-name';
+            name.textContent = getBoardLabel(value);
+
+            const num = document.createElement('div');
+            num.className = 'tile-num';
+            num.textContent = displayValue(value);
+
             inner.appendChild(name);
             inner.appendChild(num);
             tile.appendChild(inner);
-            if(state.wishMode && wishCount>0){
-              const tag=document.createElement('div');
-              tag.className='wish-tag';
-              tag.textContent='星愿';
+
+            if(state.wishMode && wishCount > 0){
+              const tag = document.createElement('div');
+              tag.className = 'wish-tag';
+              tag.textContent = '消除';
               tile.appendChild(tag);
             }
           }
-          tile.addEventListener('click',()=>{
-            if(state.wishMode && wishCount>0 && value!==0 && !state.gameOver) useWish(r,c);
+
+          tile.addEventListener('click', ()=>{
+            if(state.wishMode && wishCount > 0 && value !== 0 && !state.gameOver){
+              useWish(r, c);
+            }
           });
+
           boardEl.appendChild(tile);
         });
       });
     }
 
     function renderStats(){
-      const wishCount=getWishCount(state.score, state.wishesUsed);
-      scoreEl.textContent=state.score; bestEl.textContent=state.best; wishEl.textContent=wishCount; foundEl.textContent=getUnlockedCount();
-      const highestActual=getHighestActual(state.board); const highestDisplay=normalizeValue(highestActual);
-      const info=getFeaturedInfo(highestDisplay);
-      featuredSprite.innerHTML=''; featuredSprite.appendChild(createSpriteElement(highestDisplay,{large:true}));
-      featuredName.textContent=info.name; featuredDesc.textContent=info.title;
+      const wishCount = getWishCount(state.score, state.wishesUsed);
+      scoreEl.textContent = state.score;
+      bestEl.textContent = state.best;
+      wishEl.textContent = wishCount;
+      foundEl.textContent = getUnlockedCount();
+
+      const highestDisplay = normalizeValue(getHighestActual(state.board));
+      const info = getFeaturedInfo(highestDisplay);
+
+      featuredSprite.innerHTML = '';
+      featuredSprite.appendChild(createSpriteElement(highestDisplay,{large:true}));
+      featuredName.textContent = info.name;
+      featuredDesc.textContent = info.title;
     }
 
     function renderCodex(){
-      codexEl.innerHTML=''; unlockBadge.textContent=`已解锁 ${getUnlockedCount()}/${STAR_ORDER.length}`;
+      codexEl.innerHTML = '';
+      unlockBadge.textContent = `已解锁 ${getUnlockedCount()}/${STAR_ORDER.length}`;
+
       STAR_ORDER.forEach(value=>{
-        const info=STAR_PEOPLE[value]; const ok=state.unlocked.has(value); const entry=document.createElement('div'); entry.className='entry'+(ok?'':' locked')+(state.newlyUnlocked===value?' newly':'');
+        const ok = state.unlocked.has(value);
+        const entry = document.createElement('div');
+        entry.className = 'entry' + (ok ? '' : ' locked') + (state.newlyUnlocked === value ? ' newly' : '');
+
         entry.appendChild(createSpriteElement(value,{locked:!ok}));
-        const right=document.createElement('div'); right.style.minWidth='0'; right.style.flex='1';
-        const title=document.createElement('div'); title.className='entry-title'; title.textContent = getPublicName(value, ok);
-        const desc=document.createElement('div'); desc.className='entry-desc'; desc.textContent = getPublicDesc(value, ok);
-        right.appendChild(title); right.appendChild(desc); entry.appendChild(right); codexEl.appendChild(entry);
+
+        const right = document.createElement('div');
+        right.style.minWidth = '0';
+        right.style.flex = '1';
+
+        const title = document.createElement('div');
+        title.className = 'entry-title';
+        title.textContent = getPublicName(value, ok);
+
+        const desc = document.createElement('div');
+        desc.className = 'entry-desc';
+        desc.textContent = getPublicDesc(value, ok);
+
+        right.appendChild(title);
+        right.appendChild(desc);
+        entry.appendChild(right);
+        codexEl.appendChild(entry);
       });
     }
 
     function renderAll(){
-      renderStats(); renderBoard(); renderCodex();
+      renderStats();
+      renderBoard();
+      renderCodex();
       document.getElementById('wishBtn').textContent = state.wishMode ? '取消星愿' : '使用星愿';
       document.getElementById('wishBtn').className = 'btn' + (state.wishMode ? ' warn' : '');
-      document.getElementById('undoBtn').disabled = state.history.length===0;
+      document.getElementById('undoBtn').disabled = state.history.length === 0;
       document.getElementById('wishBtn').disabled = getWishCount(state.score, state.wishesUsed) <= 0;
       saveProgress();
     }
@@ -520,80 +844,97 @@
         }else{
           showToast(`图鉴已解锁：${getStarInfo(newest).name}`);
         }
-        setTimeout(()=>{ state.newlyUnlocked = null; renderCodex(); }, 1200);
+        setTimeout(()=>{
+          state.newlyUnlocked = null;
+          renderCodex();
+        }, 1200);
       }
     }
 
     function resetGame(){
-      state.board=initializeBoard();
-      state.score=0;
-      state.won=false;
-      state.gameOver=false;
-      state.history=[];
-      state.wishMode=false;
-      state.wishesUsed=0;
-      state.newlyUnlocked=null;
+      state.board = initializeBoard();
+      state.score = 0;
+      state.won = false;
+      state.gameOver = false;
+      state.history = [];
+      state.wishMode = false;
+      state.wishesUsed = 0;
+      state.newlyUnlocked = null;
       hideOverlay();
       renderAll();
     }
 
     function undo(){
       if(!state.history.length) return;
-      const last=state.history.pop();
-      state.board=last.board;
-      state.score=last.score;
-      state.won=last.won;
-      state.gameOver=last.gameOver;
-      state.wishesUsed=last.wishesUsed;
-      state.unlocked=new Set(last.unlocked);
-      state.wishMode=false;
-      state.newlyUnlocked=null;
+      const last = state.history.pop();
+      state.board = last.board;
+      state.score = last.score;
+      state.won = last.won;
+      state.gameOver = last.gameOver;
+      state.wishesUsed = last.wishesUsed;
+      state.unlocked = new Set(last.unlocked);
+      state.wishMode = false;
+      state.newlyUnlocked = null;
       hideOverlay();
       renderAll();
       maybeVibrate(12);
     }
 
     function showOverlay(title,text,showContinue=true){
-      overlayTitle.textContent=title;
-      overlayText.textContent=text;
-      continueBtn.style.display=showContinue ? 'inline-flex' : 'none';
+      overlayTitle.textContent = title;
+      overlayText.textContent = text;
+      continueBtn.style.display = showContinue ? 'inline-flex' : 'none';
       overlay.classList.add('show');
     }
-    function hideOverlay(){ overlay.classList.remove('show'); }
+
+    function hideOverlay(){
+      overlay.classList.remove('show');
+    }
 
     function tryMove(direction){
       if(state.gameOver) return;
-      const result=moveBoard(state.board,direction);
+      const result = moveBoard(state.board, direction);
       if(!result.moved) return;
+
       pushHistory();
       state.score += result.scoreGain;
       state.board = addRandomTile(result.board, state.score);
       state.best = Math.max(state.best, state.score);
       unlockCreated(result.created);
-      const highest=getHighestActual(state.board);
-      if(highest >= TARGET && !state.won){ state.won=true; showOverlay('你合成出星王了','2048 已达成。你还可以继续往更高分冲，隐藏款还在更后面。',true); }
-      if(highest >= 5090){ showOverlay('隐藏款出现了','你把神秘隐藏款也合成出来了。',true); }
+
+      const highest = getHighestActual(state.board);
+      if(highest >= TARGET && !state.won){
+        state.won = true;
+        showOverlay('你合成出星王了','2048 已达成。你还可以继续往更高分冲，隐藏款还在更后面。',true);
+      }
+      if(highest >= 5090){
+        showOverlay('隐藏款出现了','你把神秘隐藏款也合成出来了。',true);
+      }
+
       state.gameOver = !hasMoves(state.board);
-      if(state.gameOver) showOverlay('小星星堵车了','这局已经没有可移动空间，不过你还能回退一步，或者直接重开。',false);
+      if(state.gameOver){
+        showOverlay('小星星堵车了','这局已经没有可移动空间，不过你还能回退一步，或者直接重开。',false);
+      }
+
       renderAll();
       maybeVibrate(10);
     }
 
     function useWish(r,c){
-      const raw=state.board[r][c];
+      const raw = state.board[r][c];
       if(!raw) return;
+
+      const wishCount = getWishCount(state.score, state.wishesUsed);
+      if(wishCount <= 0) return;
+
       pushHistory();
-      const next = normalizeValue(raw) === 2048 ? 5090 : normalizeValue(raw) * 2;
-      state.board[r][c] = next === 5090 ? 5090 : next;
+      state.board[r][c] = 0;
       state.wishesUsed += 1;
       state.wishMode = false;
-      unlockCreated([next]);
-      const highest=getHighestActual(state.board);
-      if(next === 5090){ showOverlay('隐藏款出现了','你用星愿点出了神秘隐藏款。',true); }
-      else if(highest >= TARGET && !state.won){ state.won=true; showOverlay('你合成出星王了','2048 已达成。你还可以继续往更高分冲。',true); }
-      state.gameOver = !hasMoves(state.board);
-      if(state.gameOver) showOverlay('小星星堵车了','这局已经没有可移动空间，不过你还能回退一步，或者直接重开。',false);
+      state.gameOver = false;
+      hideOverlay();
       renderAll();
+      showToast('已消除一个方块。');
       maybeVibrate(16);
     }
 
@@ -601,36 +942,47 @@
     document.getElementById('restartFromOverlayBtn').addEventListener('click', resetGame);
     document.getElementById('undoBtn').addEventListener('click', undo);
     document.getElementById('continueBtn').addEventListener('click', hideOverlay);
-    document.getElementById('wishBtn').addEventListener('click',()=>{
+    document.getElementById('wishBtn').addEventListener('click', ()=>{
       if(getWishCount(state.score, state.wishesUsed) <= 0) return;
       state.wishMode = !state.wishMode;
       renderAll();
     });
 
-    window.addEventListener('keydown',e=>{
-      const map={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};
-      const dir=map[e.key];
+    window.addEventListener('keydown', e=>{
+      const map = {
+        ArrowLeft:'left',
+        ArrowRight:'right',
+        ArrowUp:'up',
+        ArrowDown:'down',
+        a:'left',
+        d:'right',
+        w:'up',
+        s:'down'
+      };
+      const dir = map[e.key];
       if(!dir) return;
       e.preventDefault();
       tryMove(dir);
     });
 
-    let touchStartX=0, touchStartY=0;
-    boardEl.addEventListener('touchstart',e=>{
-      const t=e.touches[0];
-      touchStartX=t.clientX;
-      touchStartY=t.clientY;
-    },{passive:true});
+    let touchStartX = 0;
+    let touchStartY = 0;
 
-    boardEl.addEventListener('touchend',e=>{
-      const t=e.changedTouches[0];
-      const dx=t.clientX-touchStartX;
-      const dy=t.clientY-touchStartY;
-      const min=24;
+    boardEl.addEventListener('touchstart', e=>{
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+    }, {passive:true});
+
+    boardEl.addEventListener('touchend', e=>{
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const min = 24;
       if(Math.max(Math.abs(dx), Math.abs(dy)) < min) return;
       if(Math.abs(dx) > Math.abs(dy)) tryMove(dx > 0 ? 'right' : 'left');
       else tryMove(dy > 0 ? 'down' : 'up');
-    },{passive:true});
+    }, {passive:true});
 
     resetGame();
     state.best = Number(localStorage.getItem(STORAGE_BEST) || 0);
